@@ -1,29 +1,19 @@
 # Manifesto Topic Modeling with R
 
-This project analyzes party manifestos from the Manifesto Project for the German parties SPD, FDP, and Bündnis 90/Die Grünen. The goal is to identify recurring thematic patterns in party programs over time and compare the parties' political priorities using topic modeling.
+This repository contains a **Digital Humanities** project applying quantitative computational methods to a political science research question. Using **topic modeling**, I analyzed party manifestos from the **Manifesto Project** database for German parties. The goal is to track thematic patterns over time and compare how the parties' political priorities have evolved.
 
 The analysis is implemented in R and follows a standard text-mining pipeline: data retrieval, preprocessing, POS-based filtering, document-term matrix creation, LDA topic modeling, and visualization of topic proportions by election year and party.
 
-## Project objective
+
+## Research context and Objectives
+
+The dataset is sourced from the [Manifesto Project database](https://manifesto-project.wzb.eu). The analysis focuses on the manifestos published between **1983 and 2021** of three major parties: **SPD** (41320), **FDP** (41420) and **Bündnis 90/Die Grünen** (41111, 41112, 41113). Notably, these three parties went on to form Germany's federal coalition government following the 2021 general election.
 
 The project investigates:
 
-- which themes dominate party manifestos across time,
-- how the salience of topics differs between SPD, FDP, and the Greens,
-- how topical emphasis shifts across election cycles,
-- which latent topics can be derived from the manifestos using an unsupervised LDA model.
-
-## Research context
-
-The data source is the Manifesto Project database:
-
-- https://manifesto-project.wzb.eu/
-
-The study focuses on German party manifestos from 1983 onward, using the relevant party codes for:
-
-- SPD (41320)
-- FDP (41420)
-- Bündnis 90/Die Grünen (41111, 41112, 41113)
+- which latent topics can be derived from the manifestos using an unsupervised LDA model,
+- how the salience of topics differs or aligns between SPD, FDP, and the Greens,
+- how topical emphasis shifts across election cycles.
 
 ## Prerequisites
 
@@ -52,200 +42,169 @@ install.packages(c(
 
 ### Manifesto Project API key
 
-You need a valid Manifesto Project API key stored at:
-
-- `other_docs/manifesto_apikey.txt`
+You need a valid Manifesto Project API key stored in a text file named [`manifesto_apikey.txt`](other_docs/manifesto_apikey.txt).
 
 
 ### Additional stopword files
 
-The preprocessing step reads custom German stopwords and topic-related words from:
+The preprocessing relies on the removal of German stopwords and, during the process defined, overused terms. The according files can be found in the [`other_docs`](other_docs) folder:
 
-- `other_docs/stopwords_deutsch.txt`
-- `other_docs/topwords_deutsch.txt`
+- [`stopwords_deutsch.txt`](other_docs/stopwords_deutsch.txt)
+- [`topwords_deutsch.txt`](other_docs/topwords_deutsch.txt)
 
 The scripts currently point to absolute Windows paths and may need to be adjusted on another machine.
 
-### Optional: UDPipe model
 
-The POS-tagging script downloads the German UDPipe model automatically if it is not already available.
+## Workflow
 
-## Repository structure
-
-```text
-manifesto-topic-modeling-r/
-├── README.md
-├── R_scripts/
-│   ├── 1_Corpus_vorbereiten.R
-│   ├── 2_POS-Tagging.R
-│   ├── 3_DTM.R
-│   ├── 4_Topic Modelling.R
-│   ├── 5_Viz_Heatmap_PartyDistributions.R
-│   └── CalculateTopicNumber.R
-├── other_docs/
-│   ├── manifesto_apikey.txt
-│   ├── stopwords_deutsch.txt
-│   └── topwords_deutsch.txt
-├── results/
-│   ├── TopicLabels.txt
-│   └── Top20Terms.txt
-└── workspaces/
-    ├── DTM_05.03..RData
-    └── tm3_51_06.03.RData
-```
-
-## Workflow used
+You can find all named files in the [`R_scripts`](R_scripts) folder
 
 ### 1. Corpus preparation
 
-File: `R_scripts/1_Corpus_vorbereiten.R`
+The file [`1_Prepare_Corpus.R`](R_scripts/1_Prepare_Corpus.R):
 
-This script:
-
-- loads the `manifestoR` package,
-- authenticates using the personal API key,
-- downloads the selected party manifestos,
-- filters the corpus by relevant party IDs and date range,
-- splits long texts into chunks of 99 tokens,
+- downloads the selected party manifestos filtered by ID and date range with the personal API key,
+- splits long texts into chunks,
 - creates a tidy dataframe with one section per row.
-
-This step reduces memory pressure and makes later text processing more manageable.
 
 ### 2. POS tagging and lemmatization
 
-File: `R_scripts/2_POS-Tagging.R`
-
-This script:
+The file [`2_POS-Tagging.R`](R_scripts/2_POS-Tagging.R):
 
 - downloads the German UDPipe language model,
-- annotates each text section,
-- keeps nouns and proper nouns,
-- replaces special characters and normalizes the text,
-- stores only lemma-based noun terms for topic modeling.
+- tags each text chunk to keep nouns and proper nouns,
+- replaces special characters and normalizes the nouns,
+- stores inflected word variants into single lemma-based noun terms.
 
-The motivation is to reduce noisy text and keep conceptually relevant terms.
+**The motivation is to reduce noisy text and vocabulary sparsity as well as to keep conceptually relevant terms.**
 
 ### 3. DTM creation
 
-File: `R_scripts/3_DTM.R`
-
-This script:
+The file [`3_DTM.R`](R_scripts/3_DTM.R):
 
 - converts the prepared data to a `quanteda` corpus,
-- removes German stopwords and custom topwords,
-- identifies frequent collocations,
-- compounds multi-word phrases,
+- removes German stopwords and self-defined topwords (semantically irrelevant),
+- identifies frequent collocations and compounds them into multi-word phrases,
 - creates a document-term matrix,
 - removes empty rows and sparse non-representative terms.
 
-The final DTM is used as input to the latent topic model.
 
 ### 4. Topic modeling
 
-File: `R_scripts/4_Topic Modelling.R`
+The file [`4_Topic_Modelling.R`](R_scripts/4_Topic_Modelling.R):
 
-This file:
-
-- defines the topic number `K = 51`,
+- sets the topic number (to determine `K`, see step 6),
 - runs an LDA model with Gibbs sampling,
 - calculates topic distributions (`theta`) and term distributions (`beta`),
 - derives topic labels from the top terms,
 - exports JSON for LDAvis-based interactive exploration.
 
-The script also ranks topics by overall proportion and stores the topic summary.
-
 ### 5. Visualization of party-specific topic distributions
 
-File: `R_scripts/5_Viz_Heatmap_PartyDistributions.R`
+The file [`5_Viz_Heatmap_PartyDistributions.R`](R_scripts/5_Viz_Heatmap_PartyDistributions.R):
 
-This script:
-
-- loads the labels generated for each topic,
+- loads the labels that I manually created for each topic based on the [top 20 terms](results/Top20Terms.txt),
 - aggregates topic proportions by election year for each party,
 - creates party-specific heatmaps,
-- saves topic terms and labels to `results/`.
+- saves topic terms and labels to [`results/`](results).
 
-The visual output shows how topic emphasis varies by year and party.
 
 ### 6. Topic number selection
 
-File: `R_scripts/CalculateTopicNumber.R`
+The file [`CalculateTopicNumber.R`](R_scripts/CalculateTopicNumber.R) uses the DTM (step 3) and the `ldatuning` package to visually determine an appropriate number of latent topics (`K`). Using several metrics we can identify the optimal `K` where divergence metrics are minimized and coherence metrics are maximized.
 
-This script uses `ldatuning` and several internal metrics such as:
+![Number of Topics Metrics Diagram](results/NumberOfTopicsMetrics.png)
 
-- Griffiths2004
-- CaoJuan2009
-- Arun2010
-- Deveaud2014
-
-It helps determine an appropriate number of latent topics before final modeling.
 
 ## How to run the project
 
-1. Place your Manifesto Project API key in the path expected by the scripts.
+1. Place your Manifesto Project API key in the path expected by the script.
 2. Adjust absolute file paths in the scripts if you are running the project outside the original setup.
 3. Run the scripts in order:
 
 ```r
-source("R_scripts/1_Corpus_vorbereiten.R")
+source("R_scripts/1_Prepare_Corpus.R")
 source("R_scripts/2_POS-Tagging.R")
 source("R_scripts/3_DTM.R")
-source("R_scripts/4_Topic Modelling.R")
+# source("R_scripts/CalculateTopicNumber.R")  # optional tuning step
+source("R_scripts/4_Topic_Modelling.R")
 source("R_scripts/5_Viz_Heatmap_PartyDistributions.R")
 ```
 
-4. If you want to test the topic-number tuning step first, run:
-
-```r
-source("R_scripts/CalculateTopicNumber.R")
-```
-
-## Results summary
-
-The final LDA model identifies 51 latent topics. The model groups the party manifestos into recurring political themes such as:
-
-- labor market and employment policy,
-- foreign and defense policy,
-- welfare and social policy,
-- education and family policy,
-- environmental policy,
-- science, digitalization, and data protection,
-- equal rights and discrimination,
-- democratic institutions and transparency,
-- urban development and mobility,
-- memory culture and historical justice.
-
-The topic labels generated in `results/TopicLabels.txt` show the thematic structure of the corpus. The most prominent topics include:
-
-- labor market policy,
-- foreign policy,
-- housing and urban development,
-- social policy,
-- environmental protection,
-- education and training,
-- internal security,
-- democracy and governance.
-
-Across the examined parties, the visualizations suggest clear differences in emphasis:
-
-- the Greens show strong signals in environmental policy, equality, and sustainability issues,
-- the FDP emphasizes market regulation, innovation, digitalization, and liberal rights,
-- the SPD often highlights welfare, social policy, labor market policy, and public services.
-
-## Output files
+### Output files
 
 The project produces several result artifacts:
 
-- `results/TopicLabels.txt` — manually assigned labels for each topic
-- `results/Top20Terms.txt` — top terms for the labeled topics
-- `workspaces/*.RData` — saved workspace objects from the modeling pipeline
+- [`results/TopicLabels.txt`](results/TopicLabels.txt) — manually assigned labels for each topic
+- [`results/Top20Terms.txt`](results/Top20Terms.txt) — top 20 terms for each topic
+- `workspaces/*.RData` — saved workspace objects from the pipeline
 
-## Notes and caveats
 
-- The scripts currently contain hard-coded Windows paths; they need to be adapted for Linux or macOS environments.
-- The workflow is research-oriented and designed for exploratory analysis rather than production-grade automation.
-- The LDA parameter choice (`K = 51`) is based on topic-number tuning and domain judgment; results may vary with preprocessing and the chosen stopword list.
 
-## Conclusion
+## Project Findings and Limitations
 
-This project demonstrates how topic modeling can be used in political text analysis to extract latent themes from party manifestos and compare the ideological structure of major German parties over time. It is a useful workflow for digital humanities and comparative politics research.
+### Macro-Level Historical Trends (1983–2021):
+
+- **1980s (Peace & Ecology)**: Cold War foreign policy and disarmament (topics 6, 10, 20), and early environmental policy (topic 15) influenced by Chernobyl and the West German peace movement [[1]](#1).
+- **1990 (Reunification)**: Heavy focus across all parties on German reunification and the East Germany integration (topics 3, 29, 32).
+- **1998–2009 (Europe & Economic Crises)**: Increased prevalence of European integration (topic 22), which converged with debt policies and banking regulation (topics 4, 33) after the 2009 Eurozone crisis.
+- **2013 to 2021**: Sharp increase in topics surrounding digitalization / data privacy (topic 24), asylum/refugee policy (topic 19), and climate-driven transport policies (topics 7, 15, 42). In 2021, scientific research funding and health policy (topics 27, 28) spiked in response to COVID-19.
+- **Constant Anchors**: Labor market conditions, foreign conflict resolution and tax/financial policy (topics 1, 10, 34) remained persistent across all 11 election cycles.
+
+![Topic Distribution Insgesamt](results/TopicVerteilungInsgesamt.png)
+
+
+### Party-Specific Evolutions
+
+<u>**SPD**</u> [[2]](#2):
+- **Core**: Focuses on labor market, social and financial policy (Topics 1, 14, 34).
+- **Post-1989**: Shifted toward post-materialist values like peace, environmental protection (Topics 7, 47), and self-determination (Topic 37).
+- **2017–2021**: Increased focus on digitalization, asylum, and transport (Topics 19, 24, 42), presenting itself as a broad catch-all party (Volkspartei).
+
+![Topic Distribution SPD](results/TopicVerteilungSPD.png)
+
+
+<u>**Bündnis 90/Die Grünen**</u> [[3]](#3):
+
+- **1983–1990**: Centered on foreign policy/human rights (Topic 6), disarmament (Topic 20), democracy (Topic 25), and ecology (Topic 40).
+- **1987 Onward**: Expanded into gender equality (Topics 37, 49), anti-discrimination (Topic 41), and remembrance culture (Topic 29).
+- **1990s**: Linked ecology with finance (Topic 34) and social policy (Topics 14, 30) for their 1998 ecological tax reform.
+- **Post-2000s**: Broadened into a reform party covering education (Topic 36), youth/science (Topics 18, 39, 44), energy efficiency (Topics 7, 15), and EU policy (Topic 22).
+
+![Topic Distribution Die Grünen](results/TopicVerteilungDieGruenen.png)
+
+
+<u>**FDP**</u> [[4]](#4):
+
+- **Longitudinal Core**: Focused consistently on market competition, privatization, and administrative reform (Topic 31).
+- **1983–1998**: Emphasized foreign policy, basic rights, labor, and cultural policy (Topic 45).
+- **2017–2021**: Refocused on digitalization/data privacy (Topic 24) and education (Topic 36).
+
+![Topic Distribution FDP](results/TopicVerteilungFDP.png)
+
+
+### Methodological & Technical Limitations
+
+**Core Methodological Takeaways**
+- **Scale Dependency**: LDA efficiency increases with larger text corpora; expanding the time horizon or including additional political parties yields cleaner topic distributions.
+- **Topics vs. Stances**: LDA clusters by word co-occurence patterns, but cannot infer political sentiment or ideological stance. Quantitative extraction must be paired with qualitative evaluation. This means that topics should be interpreted as analytical frames (perspectives) rather than exhaustive representations of complex policy issues [[5]](#5).
+- **Validation Overhead**: Model evaluation remains a manual, human-intensive work requiring domain expertise to filter noise and assign accurate topic labels.
+
+**Systemic Technical Challenges**
+- **Semantic Drift (Word Shifts)**: Words alter contextual meaning over a 40-year window due to real-world events, introducing minor noise into longitudinal topic trajectories.
+- **Length Bias**: Parties expressing policy positions concisely are mathematically less likely to dominate topic distributions compared to those with verbose descriptions.
+
+
+
+### References
+<a id="1">[1]</a>
+Andreas Buro, "Friedensbewegung" [Peace Movement], in Handbuch Frieden, ed. Hans-Joachim Gießmann and Bernhard Rinke (Wiesbaden: VS Verlag für Sozialwissenschaften, 2011), 113–124.
+
+<a id="2">[2]</a>
+Tim Spier and Ulrich von Alemann, "Die Sozialdemokratische Partei Deutschlands (SPD)", in *Handbuch Parteienforschung*, ed. Oskar Niedermayer (Wiesbaden: Springer Fachmedien, 2013), 445.
+
+<a id="3">[3]</a>
+Lothar Probst, "Bündnis 90/Die Grünen (GRÜNE)," in *Handbuch Parteienforschung*, ed. Oskar Niedermayer (Wiesbaden: Springer Fachmedien, 2013), 509–540.
+
+<a id="4">[4]</a>
+Hans Vorländer, "Die Freie Demokratische Partei (FDP)," *in Handbuch Parteienforschung*, ed. Oskar Niedermayer (Wiesbaden: Springer Fachmedien, 2013), 497–507.
