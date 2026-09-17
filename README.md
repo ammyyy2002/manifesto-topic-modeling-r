@@ -208,3 +208,6 @@ Lothar Probst, "Bündnis 90/Die Grünen (GRÜNE)," in *Handbuch Parteienforschun
 
 <a id="4">[4]</a>
 Hans Vorländer, "Die Freie Demokratische Partei (FDP)," *in Handbuch Parteienforschung*, ed. Oskar Niedermayer (Wiesbaden: Springer Fachmedien, 2013), 497–507.
+
+<a id="5">[5]</a>
+Paul DiMaggio, Manish Nag, and David Blei, "Exploiting Affinities Between Topic Modeling and the Sociological Perspective on Culture: Application to Newspaper Coverage of U.S. Government Arts Funding," Poetics 41, no. 6 (2013): 570–606.
