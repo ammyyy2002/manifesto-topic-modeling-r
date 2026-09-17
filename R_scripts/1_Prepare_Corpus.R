@@ -3,22 +3,22 @@ library(dplyr)
 library(tidytext)
 library(quanteda)
 
-# Verwendung eines persönlichen API-Keys
-mp_setapikey("C://projects/projektarbeit/manifesto_apikey.txt")
+# usage of personal API key
+mp_setapikey("C://projects/projektarbeit/other_docs/manifesto_apikey.txt")
 
-# Bündnis 90/Die Grünen (41111, 41112, 41113), FDP (41420) und SPD (41320) ab 1994
+# Bündnis 90/Die Grünen (41111, 41112, 41113), FDP (41420) und SPD (41320) from 1983 to 2021
 corp_regierung <- mp_corpus(
   edate > as.Date("1983-02-28") 
   & (party == 41113 | party == 41420 | party == 41320 | party == 41111 | party == 41112))
 
-# bei Bedarf doppelte Entfernung von Punktierung
+# if necessary second removal of punctuation and numbers
 #corp_cleaned <- tm_map(corp_regierung, removePunctuation)
 #corp_cleaned <- tm_map(corp_cleaned, removeNumbers)
 
 
 df_corp_tidy <- corp_regierung %>% tidy()  # dim(df_corp_tidy) [1] 33 17
 
-# Texte in Abschnitte teilen
+# split texts into chunks of 100 words and create new dataframe with new text chunks
 result <- data.frame()
 pb <- txtProgressBar(min = 1,max=nrow(df_corp_tidy), style=3)
 for(id in 1:nrow(df_corp_tidy))

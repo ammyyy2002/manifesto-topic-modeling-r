@@ -4,7 +4,7 @@ library(ggplot2)
 
 Labels <- readLines("C://projects/projektarbeit/TopicLabels.txt")
 
-# Die Grünen
+# create and plot heatmap for Die Grünen
 dieGrünen <- result %>% filter(partei %in% c(41111, 41112, 41113))
 topic_proportion_pro_wahlperiode_grünen <- 
   aggregate(theta[dieGrünen$abschnitt_id,], 
@@ -19,7 +19,7 @@ ggplot(vizDataFrame_grüne, aes(x = wahljahr, y = variable, fill = value)) +
   labs(x = "Wahljahr", y = "Topic", fill = "Proportion") +
   theme_minimal()
 
-# FDP
+# create and plot heatmap for FDP
 fdp <- result %>% filter(partei == 41420)
 topic_proportion_pro_wahlperiode_fdp <- 
   aggregate(theta[fdp$abschnitt_id,], 
@@ -35,7 +35,7 @@ ggplot(vizDataFrame_fdp, aes(x = wahljahr, y = variable, fill = value)) +
   theme_minimal()
 
 
-# SPD
+# create and plot heatmap for SPD
 spd <- result %>% filter(partei == 41320)
 topic_proportion_pro_wahlperiode_spd <- 
   aggregate(theta[spd$abschnitt_id,], 
@@ -51,7 +51,7 @@ ggplot(vizDataFrame_spd, aes(x = wahljahr, y = variable, fill = value)) +
   theme_minimal()
 
 
-# Verteilung insgesamt
+# plot total distribution
 topic_proportion_pro_wahlperiode_insg <- 
   aggregate(theta[result$abschnitt_id,], 
             by = list(wahljahr = result$wahljahr), mean)
@@ -67,7 +67,7 @@ ggplot(vizDataFrame_grüne, aes(x = wahljahr, y = variable, fill = value)) +
 
 #######################################################################
 
-# Tabelle aus Topic-Label und Top20-Termen
+# table of topic labels and top 20 terms
 
 Top_20_Terms <- apply(terms(topmod, 20), 2, paste, collapse = ", ")
 LabelTerms <- data.frame(Labels, Top_20_Terms)
